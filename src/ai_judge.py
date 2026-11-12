@@ -9,7 +9,7 @@ from openai import OpenAI
 from load_testcases import load_testcases
 
 ROOT = Path(__file__).resolve().parent.parent
-PROMPT_PATH = ROOT / "prompts" / "judge_v1.md"
+PROMPT_PATH = ROOT / "prompts" / "judge_v2.md"
 
 # ステップの英語名と日本語名（並び順もこの順）
 STEPS = {
