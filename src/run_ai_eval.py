@@ -1,6 +1,7 @@
-"""調整用のテストデータをまとめてAIに判定させ、結果をCSVに保存する"""
+"""テストデータをまとめてAIに判定させ、結果をCSVに保存する"""
 import csv
 import os
+import sys
 import time
 from collections import Counter
 from datetime import datetime
@@ -13,9 +14,9 @@ from load_testcases import load_testcases
 
 RESULTS_DIR = ROOT / "results"
 
-# 結果のCSVの例（テストデータの列 + AIの判定 + 正誤・時間・エラー　)
+# 結果のCSVの例(テストデータの列 + AIの判定 + 正誤・時間・エラー　)
 FIELDS = [
-    "id", "split", "case_id", "test_type", "step", "input","expected_label", "expected_looks_like",
+    "id", "split", "case_id", "test_type", "step", "input", "expected_label", "expected_looks_like",
     "label", "looks_like", "against", "evidence", "good_point", "question",
     "correct", "seconds", "error"
 ]
@@ -23,13 +24,24 @@ AI_FIELDS = ["label", "looks_like", "against", "evidence", "good_point", "questi
 
 
 if __name__ == "__main__":
+    # コマンドで test か tune かを受け取る。何も入力されない場合は tune
+    split = sys.argv[1] if len(sys.argv) > 1 else "tune"
+    # tune でも test でもなければ止める
+    if split not in ("tune", "test"):
+        raise SystemExit("指定は tune か test にしてください")
+    # test の場合、続けるか確認する
+    if split == "test":
+        answer = input("検証用データ(test)を使います。最終検証のときだけ実行してください。続けますか？ (yes/no): ")
+        # yes 以外が入力された場合、中止する
+        if answer != "yes":
+            raise SystemExit("中止しました")
+
     if not load_dotenv(ROOT / ".env"):
         raise SystemExit(f".envが見つかりません: {ROOT / '.env'}")
     client = OpenAI()
     model = os.environ["OPENAI_MODEL"]
 
-    # 調整用(tune)だけを使う。検証用(test)は最後まで使わない
-    cases = [c for c in load_testcases() if c["split"] == "tune"]
+    cases = [c for c in load_testcases() if c["split"] == split]
 
     rows = []
     for i, c in enumerate(cases, start=1):
@@ -45,17 +57,17 @@ if __name__ == "__main__":
             row["error"] = str(e)
         row["seconds"] = round(time.perf_counter() - start, 1)
         
-            # 禁止事項のテスト(guardrail)はラベルがないので、正誤は付けない
+        # 禁止事項のテスト(guardrail)はラベルがないので、正誤は付けない
         if c["test_type"] != "guardrail" and not row["error"]:
             row["correct"] = row["label"] == c["expected_label"]
             
         rows.append(row)
         print(f"[{i}/{len(cases)}] {c['id']} 正解: {c['expected_label'] or '-'} / AI: {row['label'] or 'エラー'}")
 
-        # 結果をCSVに保存する(ファイル名に、指示文の版・モデル名・日時を入れる)
+    # 結果をCSVに保存する(ファイル名に、指示文の版・モデル名・日時を入れる)
     RESULTS_DIR.mkdir(exist_ok=True)
     stamp = datetime.now().strftime("%Y%m%d_%H%M")
-    out_path = RESULTS_DIR / f"ai_tune_{PROMPT_PATH.stem}_{model}_{stamp}.csv"
+    out_path = RESULTS_DIR / f"ai_{split}_{PROMPT_PATH.stem}_{model}_{stamp}.csv"
     with open(out_path, "w", encoding="utf-8-sig", newline="") as f:
         writer = csv.DictWriter(f, fieldnames=FIELDS)
         writer.writeheader()
