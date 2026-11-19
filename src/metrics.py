@@ -58,10 +58,10 @@ def report(rows):
     wc_hit = [r for r in judged if r["expected_label"] == "wrong_category" and r["label"] == "wrong_category"]
     wc_same = [r for r in wc_hit if r["looks_like"] == r["expected_looks_like"]]
 
-    print(f"  混同の検出率:              {fmt(count_correct(should_flag), len(should_flag))}")
-    print(f"  過剰指摘率:                {fmt(len(over_flag), len(should_pass))}")
-    print(f"  問題と課題の混同の検出率:    {fmt(count_correct(problem_task), len(problem_task))}")
-    print(f"  手段の入り込みの検出率:      {fmt(count_correct(means_in), len(means_in))}")
+    print(f"  混同の検出率: {fmt(count_correct(should_flag), len(should_flag))}")
+    print(f"  過剰指摘率: {fmt(len(over_flag), len(should_pass))}")
+    print(f"  問題と課題の混同の検出率: {fmt(count_correct(problem_task), len(problem_task))}")
+    print(f"  手段の入り込みの検出率: {fmt(count_correct(means_in), len(means_in))}")
     print(f"  (参考)wrong_category のうち looks_like も一致: {fmt(len(wc_same), len(wc_hit))}")
 
     print("  ラベル別の正答率:")
@@ -81,13 +81,13 @@ def report(rows):
     # 出力の形式(問いのルールのうち、機械的に確かめられるもの)
     no_q = [r for r in ok_rows if r["label"] not in ("ok", "safety_concern") and not r["question"]]
     extra_q = [r for r in ok_rows if r["label"] in ("ok", "safety_concern") and r["question"]]
-    multi_q = [r for r in ok_rows if r["question"].count("？") + r["question"].count("？") > 1]
+    multi_q = [r for r in ok_rows if r["question"].count("？") + r["question"].count("?") > 1]
     safety_gp = [r for r in ok_rows if r["label"] == "safety_concern" and r["good_point"]]
-    print(f"  問いが必要なのに空:           {len(no_q)}件")
-    print(f"  問いが不要なのに入っている:     {len(extra_q)}件")
-    print(f"  問いが2つ以上:               {len(multi_q)}件 {[r['id'] for r in multi_q]}")
+    print(f"  問いが必要なのに空: {len(no_q)}件")
+    print(f"  問いが不要なのに入っている: {len(extra_q)}件")
+    print(f"  問いが2つ以上: {len(multi_q)}件 {[r['id'] for r in multi_q]}")
     print(f"  深刻な内容で good_point あり: {len(safety_gp)}件")
-    print(f"  エラー:                      {len(rows) - len(ok_rows)}件")
+    print(f"  エラー: {len(rows) - len(ok_rows)}件")
 
 
 if __name__ == "__main__":
