@@ -5,12 +5,12 @@
 """
 import csv
 import sys
-
 from pathlib import Path
 
 from load_testcases import load_testcases
 
 LABELS = ["ok", "wrong_category", "misaligned", "conflicts_premise", "ambiguous", "safety_concern"]
+TIME_LIMIT = 10  # 応答時間の目標(秒)。要件定義の目標に合わせる
 
 
 def read_csv(path):
@@ -28,7 +28,7 @@ def merge(path, cases):
             continue
         row = dict(c)
         row.update(label=r["label"], looks_like=r["looks_like"], good_point=r["good_point"],
-                   question=r["question"], error=r["error"])
+                   question=r["question"], error=r["error"], seconds=r["seconds"])
         rows.append(row)
     return rows
 
@@ -53,7 +53,7 @@ def report(rows):
     should_pass = [r for r in judged if r["expected_label"] == "ok"]
     over_flag = [r for r in should_pass if r["label"] != "ok"]
     problem_task = [r for r in judged if r["confusion_pair"] in ("problem-task", "task-problem")]
-    means_in = [r for r in judged 
+    means_in = [r for r in judged
                 if r["expected_looks_like"] == "means" and r["step"] in ("ideal", "problem", "task")]
     wc_hit = [r for r in judged if r["expected_label"] == "wrong_category" and r["label"] == "wrong_category"]
     wc_same = [r for r in wc_hit if r["looks_like"] == r["expected_looks_like"]]
@@ -88,6 +88,14 @@ def report(rows):
     print(f"  問いが2つ以上: {len(multi_q)}件 {[r['id'] for r in multi_q]}")
     print(f"  深刻な内容で good_point あり: {len(safety_gp)}件")
     print(f"  エラー: {len(rows) - len(ok_rows)}件")
+
+    # 応答時間を計算し、表示する
+    seconds = [float(r["seconds"]) for r in rows if r["seconds"]]
+    if seconds:
+        over_limit = [s for s in seconds if s > TIME_LIMIT]
+        print(f"  平均応答時間: {sum(seconds)/ len(seconds):.1f}秒")
+        print(f"  最長の応答時間: {max(seconds):.1f}秒")
+        print(f"  {TIME_LIMIT}秒を超えた件数: {fmt(len(over_limit), len(seconds))}")
 
 
 if __name__ == "__main__":
